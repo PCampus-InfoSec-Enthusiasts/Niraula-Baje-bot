@@ -1,7 +1,0 @@
-{
-    "task.slowProviderWarning": null,
-    "outline.problems.colors": true,
-    "outline.problems.badges": true,
-    "problems.decorations.enabled": true,
-    "python.pythonPath": "/usr/bin/python3",
-}
