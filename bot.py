@@ -121,8 +121,8 @@ async def on_message(message):
     
     await message.channel.send(response)
     
-    CHANNEL = client.get_channel(743759173350850561)
-    await CHANNEL.send('Rujal, malai dherai nabolau na')
+    CHANNEL = client.get_channel(channel-id)
+    await CHANNEL.send('...')
   
 
 # The command below connects and runs the bot using the given token number, which is a way to help the bot(s) communicate with Discord's API for bots.
