@@ -17,7 +17,7 @@ def covid19_data_country(country):
 
 
 def covid19_data_global():
-    url = 'https://covid19.mathdro.id/api/countries/'
+    url = 'https://covid19.mathdro.id/api/'
 
     try:
         data = requests.get(url).json()

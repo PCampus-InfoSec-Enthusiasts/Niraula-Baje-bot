@@ -96,3 +96,75 @@ def add_flag(challenge_id, flag, flag_author):
 
     else:
         return "Sorry, you aren't the challenge author, so you can't add the flag."
+
+
+
+
+
+
+def submit_flag(id, flag, solver):
+
+    #we meed to post to #challenge-updates channel who solved the challenge, also we need to record in a separate file who solved it
+
+    flags = json.load(open("flags.json"))   # here the flag.json file is loaded as a list of doctionaries:: isn't it??
+                                        
+    chal_id = int(id)                  # accepts the challenge id of the challenge from the user
+    submitted_flag_encrypted = encrypt(str(flag)) 
+        
+    response = ''
+
+    for each_item_in_list in flags:     #each_item_in_list: a dictionary
+        for each_value in each_item_in_list.values():
+            if each_value == chal_id:      # checks every ID to search for the ID of the challenge the person submitting flag wants to submit 
+                
+                if each_item_in_list["flag"] == submitted_flag_encrypted:
+                    response = "Congratulations!! That is the right flag! :smiley: :thumbsup:"
+
+
+                    #to save the solver details on json file:
+                    solves_file = json.load(open("solves.json", "r"))
+
+                    _temp = solves_file
+
+                    temp_list = []
+                    temp_list.append(solver)
+                    
+                    dict_branch = {}
+                    
+                    dict_branch["id"] = chal_id
+                    dict_branch["solved by"] = dict_branch.get("solved by", []) + temp_list
+                    dict_branch["last solved on"] = str(datetime.now(NPT).replace(microsecond=0))
+
+                    _temp.append(dict_branch)
+
+                    #to ensure that the items are sorted by their id, that is, by the value of id:
+                    _temp.sort(key=itemgetter('id'))
+
+                    #this is not needed as the line below also opens the file in write mode, thus, clearing all the contents of the file
+                    open("solves.json", "w").close()
+
+                    fp = open("solves.json", "w")
+
+                    json.dump(_temp, fp, indent=4)
+
+                    fp.close()
+
+                    break              
+                else:                               
+                    response = "That's incorrect, try again." 
+                    break
+    
+    response = "Something went wrong. Please try again."
+    return response
+
+
+# challenge_id = '1'
+# flag = '{yo_flag_ho}'
+# flag_author = 'jarp01#1910'
+# print(add_flag(challenge_id, flag, flag_author))
+
+# id = '2'
+# flag = '{flag_ho}'
+# solver = 'rujal'
+
+# print(submit_flag(id, flag, solver))

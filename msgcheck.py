@@ -1,48 +1,82 @@
 import json
 from encrypt import encrypt
-from add import add_challenge, add_flag
 import joke_api, chutkila, covid19_api
+from add_submit import add_challenge, add_flag, submit_flag
+from search_publish import search_publish_fn
 
-def cmdchecker(msg, message_author): 
+#input format to expect while adding challenge:
+    #baje add chal
+    #<category>
+    #<title>    
+    #<description>
 
-#i think it's good to have this input format:
-# baje add chal
-#<category>
-#<title>    
-#<decsription>    
-# maile copy 
-# 
-# 
+#for flag:
+    #baje add flag
+    #<challenge-id>
+    #<flag>    
 
-    command = msg.split()[0].lower()        ## command: hello/add/joke/chutkila
+#for searching or publishing challenge:
+    #baje search <challenge-id>
+    #baje publish <challenge-id>        #expecting to publish challenge to #challenges channel 
+
+#for joke/chutkila:                 
+    #baje joke
+    #baje chutkila   
+
+#for covid19 info:      #there can be multiple replacements for covid19, see its part below
+    #baje covid19 <country>
+    #baje covid19       [this will return global data, i.e. total data from the world, not from am individual country]
+
+
+        # args = message.content.split()[1:3]       # args = ['add'/'hello'/'joke', 'chal'/'flag'/'random']
+    
+        # #so, we can have:
+        # # args[0] = 'add'/'hello'/'joke'...
+        # # args[1] = 'chal'/'flag'/'random'
+
+
+        # sub_args = message.content.split('\n')[1:]   #this line avoids add chal .../hello/..etc part|but it is very crucial line esp. for description part(if that part has description in multiple lines)
+        #this carries whatever arguments are after what are in args
+
+
+
+
+def cmd_checker(args, sub_args, message_author): 
+
+    command_1 = args[0].lower()        ## command_1 = 'add'/'joke'/'chutkila'/'submit'
+    args_3 = args[1].lower()        ## args_3 = 'chal'/'flag'/'random'/country-name(for coronavirus info)/chalenge-id(for flag submission)
+    #if there is no arg in args[1] it raises an error
+    #this part raising error means the user passed only two commands:
+    #baje hello, baje joke, baje chutkila
+    #so, we need to do error handling here
+    #       if using try-except,
+    #commands which can be put in try block:
+    #       'baje joke' 'baje chutkila'
+    # 
+    # commands which can be put in except block have more than 2 arguments
+    #again, try block 
+    #
+
+
     try:
-        type = msg.split()[1].lower()           ## type: challenge(or chal)/flag/random/programming
+        type = sub_args.split()[0]           ## type: challenge(or chal)/flag/random/programming
+    
     except IndexError:
         type = 'all'                        
      
     
-    msg_new = msg.split('\n')               
-                                            
-    print(msg_new)
-    # for debugging purpose
+    msg_new = sub_args.split('\n')               
 
-    category = msg_new[1].strip()       ## category: category for adding chals/ challenge id for flags
-    title = msg_new[2].strip()          ## title: title of challenge/ the flag
+
+    category = msg_new[0].strip()       ## category: category for adding chals/ challenge id for flags
+    title = msg_new[1].strip()          ## title: title of challenge/ the flag
     description = '\n'.join(msg_new[3:]).strip()    ## description of challenge
 
     response = ''
    
     try:
-        if command == 'hello' or command == 'Hello':
-            response = 'hello babu!'
 
-
-        elif command == 'repeat':
-            response = ' '.join(type)  ## type = args[1], see above
-
-
-
-        elif command == 'add':
+        if command_1 == 'add':
             if type == 'challenge' or type == 'chal':
                 response = add_challenge(message_author, category, title, description)
 
@@ -52,33 +86,37 @@ def cmdchecker(msg, message_author):
                 response = add_flag(category, title, message_author)
 
 
-        elif command == 'submit':
-            pass
+        elif command_1 == 'submit':
+            id = msg_new[0]
+            flag = msg_new[1]
+            response = submit_flag(id, flag, message_author)
+    
 
-        elif command == 'publish':  #baje publish <challenge-id> => publish the challenge in #challenges_bot (channel to be renamed)
-            # response = chal_function(challenge_id)
-            #each and everything this command requires is in chal_function() implementation for search
-            #but we need to make this command post challenges in #challenges (to be renamed from #challenges_bot) channel
-            pass
 
-        elif command == 'joke':
+        elif command_1 == 'publish':  #baje publish <challenge-id> => publish the challenge in #challenges_bot (channel to be renamed)
+            response = search_publish_fn(command_1, args_3)
+            
+
+
+        elif command_1 == 'joke':
             response = joke_api.get_joke()
 
 
-        elif command == 'chutkila':
+
+        elif command_1 == 'chutkila':
             response = chutkila.get_chutkila()
 
-        elif command == 'coronavirus' or command == 'corona' or command == 'covid' or command == 'covid19':
+        elif command_1 == 'coronavirus' or command_1 == 'corona' or command_1 == 'covid' or command_1 == 'covid19':
             try:
                 # return the data for country the users type
-                response = covid19_api.covid19_data_country(type)
+                response = covid19_api.covid19_data_country(args_3)
             
             except:
                 # return global data if no additional argument
                 response = covid19_api.covid19_data_global()
 
 
-        elif command == 'clear': #i think we shud make this clear feature to make it easier for us to clear files
+        elif command_1 == 'clear': #i think we shud make this clear feature to make it easier for us to clear files
             pass
 
 
@@ -88,53 +126,8 @@ def cmdchecker(msg, message_author):
     return response
 
 
-def chal_function(command, args, author):
-    if command == 'add':
-        
-        pass
-
-
-#what about using the same function and method to search as well as publish challenge? because they do/have to do the same work
-
-    if command == 'search' or command == 'publish': #search <chal-id>
-        chal_file = json.load(open("challenges.json"))
-
-        chal_id = int(args[0])  
-
-        for each_item_in_list in chal_file:     #each_item_in_list: a dictionary
-            for each_value in each_item_in_list.values():
-                if each_value == chal_id:
-                    author = each_item_in_list["author"]
-                    category = each_item_in_list["category"]
-                    title = each_item_in_list["title"]
-                    description = each_item_in_list["description"]
-                    break
-                else:
-                    continue
-        
-        chal_file.close()
-        response = f"**__author__**: {author}"+"\n"+f"**__category__**: {category}"+"\n"+f"**__title__**: {title}"+"\n"+"**__description__**:"+"\n"+f"{description}"    
-        #enclosing a text with double asterisks(** **) makes the text bold and with double underscores(__ __) makes the text underlined
-
-        return response
-
-
-    if command == 'submit':
-        '''here, for 'total' summary '''
-        flags = json.load(open("flags.json"))   # here the flag.json file is loaded as a list of doctionaries:: isn't it??
-                                            
-        chal_id = int(args[0])                  # accepts the challenge id of the challenge from the user
-        submitted_flag = encrypt(str(args[1]))      #which algo does encrypt use?    :: look encrypt.py   
-            
-        response = "Invalid ID"                 # 
-
-        for each_item_in_list in flags:     #each_item_in_list: a dictionary
-            for each_value in each_item_in_list:
-                if each_value["id"] == chal_id:      # checks every ID to search for the ID of the challenge user wants to submit 
-                    if each_value["flag"] == submitted_flag:
-                        response = "Right"              
-                    else:                               
-                        response = "Wrong" 
-                        
-            
-        return response
+#for local testing
+#args = 'add chal'
+#sub_args = 'reverse \nREVERSIFY \nreverse engg.\nwhy??'
+#author = 'jarp01#1910'
+#print(cmd_checker(args, sub_args, message_author): )
